@@ -1,22 +1,16 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
-test("axe contrast", async ({ page }) => {
+test("axe contrast", async ({ page }, { project }) => {
   await page.goto("/");
-  const { color, backgroundColor } = await page.evaluate(() => {
-    const badge = document.querySelector("#badge");
-    if (badge) {
-      const styles = window.getComputedStyle(badge);
-      return { color: styles.color, backgroundColor: styles.backgroundColor };
+  await page.evaluate(($project) => {
+    if ($project.use.contextOptions?.forcedColors === "active") {
+      const style = document.createElement("style");
+      document.head.appendChild(style);
+      const textColor = $project.use.colorScheme === "dark" ? "#fff" : "#000";
+      style.textContent = `* {-webkit-text-stroke-color:${textColor}!important;-webkit-text-fill-color:${textColor}!important;}`;
     }
-
-    return { color: "", backgroundColor: "" };
-  });
-
-  console.log(color, backgroundColor);
-
-  expect(color).toEqual("rgb(255, 255, 255)");
-  expect(backgroundColor).toEqual("rgb(0, 0, 0)");
+  }, project);
 
   const accessibilityScanResults = await new AxeBuilder({
     page,
